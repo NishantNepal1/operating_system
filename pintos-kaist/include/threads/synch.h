@@ -8,6 +8,10 @@
 struct semaphore {
 	unsigned value;             /* Current value. */
 	struct list waiters;        /* List of waiting threads. */
+
+	/*Project-1 starts*/
+	int priority;
+	/* end */
 };
 
 void sema_init (struct semaphore *, unsigned value);
@@ -20,6 +24,11 @@ void sema_self_test (void);
 struct lock {
 	struct thread *holder;      /* Thread holding lock (for debugging). */
 	struct semaphore semaphore; /* Binary semaphore controlling access. */
+
+	/*Project-1 starts*/
+	int priority_maximum; /* max priority of the threads with lock */
+	struct list_elem elem; /* for priority donation */
+	/* end */
 };
 
 void lock_init (struct lock *);
@@ -46,3 +55,8 @@ void cond_broadcast (struct condition *, struct lock *);
 #define barrier() asm volatile ("" : : : "memory")
 
 #endif /* threads/synch.h */
+
+/* Project-1 starts */
+void inherit_priority(struct thread *tt, int tt_priority);
+bool priority_cmp_sp(const struct list_elem *first, const struct list_elem *second, void *aux);
+/* end */

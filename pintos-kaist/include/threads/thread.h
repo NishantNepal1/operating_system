@@ -5,6 +5,7 @@
 #include <list.h>
 #include <stdint.h>
 #include "threads/interrupt.h"
+#include "threads/synch.h"
 #ifdef VM
 #include "vm/vm.h"
 #endif
@@ -27,6 +28,9 @@ typedef int tid_t;
 #define PRI_MIN 0                       /* Lowest priority. */
 #define PRI_DEFAULT 31                  /* Default priority. */
 #define PRI_MAX 63                      /* Highest priority. */
+
+#define STDIN_READ 1
+#define STDOUT_WRITE 2
 
 /* A kernel thread or user process.
  *
@@ -91,10 +95,10 @@ struct thread {
 	enum thread_status status;          /* Thread state. */
 	char name[16];                      /* Name (for debugging purposes). */
 	int priority;                       /* Priority. */
-
+	// fixed_point load_avg = 0;
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;              /* List element. */
-
+	
 #ifdef USERPROG
 	/* Owned by userprog/process.c. */
 	uint64_t *pml4;                     /* Page map level 4 */
@@ -102,18 +106,32 @@ struct thread {
 #ifdef VM
 	/* Table for whole virtual memory owned by thread. */
 	struct supplemental_page_table spt;
+	void *lower_stack;
+	uintptr_t stack_pointer;
 #endif
 
 	/* Owned by thread.c. */
 	struct intr_frame tf;               /* Information for switching */
 	unsigned magic;                     /* Detects stack overflow. */
+
+	/* Project-1 starts */
+	int nice;
+	int recent_cpu;
+	// int load_avg;
+	int64_t wake_up_tick;
+	int priority_prev; /* Previous priority used in priority donation*/
+	struct list locks_pd; /*List of locks for priority donation*/
+	struct lock *lock_wait; /*Lock that the thread is waiting for*/
+	/* end */
+
+
 };
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
-
+extern struct list sleep_queue;
 void thread_init (void);
 void thread_start (void);
 
@@ -143,4 +161,15 @@ int thread_get_load_avg (void);
 
 void do_iret (struct intr_frame *tf);
 
-#endif /* threads/thread.h */
+#endif
+
+/* Project-1 starts */
+bool priority_cmp_td(const struct list_elem *first, const struct list_elem *second, void *aux UNUSED);
+bool priority_cmp_lk(const struct list_elem *first, const struct list_elem *second, void *aux UNUSED);
+static bool wake_up_tick_cmp(const struct list_elem *first, const struct list_elem *second, void *aux UNUSED);
+void hide_thread(int64_t ticks);
+void wake_up_thread(int64_t tick);
+void preemptive_check(int tt_priority);
+
+
+/* Project-1 ends */
