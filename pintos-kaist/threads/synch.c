@@ -66,9 +66,9 @@ sema_down (struct semaphore *sema) {
 
 	old_level = intr_disable ();
 	while (sema->value == 0) {
-		/* Project-1 starts */
-		list_insert_ordered(&sema->waiters, &thread_current ()->elem, priority_cmp_td, NULL);
-		/* end */
+		// project1 
+		list_insert_ordered(&sema->waiters, &thread_current ()->elem, thread_priority_don, NULL);
+		
 		thread_block ();
 	}
 	sema->value--;
@@ -114,19 +114,19 @@ sema_up (struct semaphore *sema) {
 	struct thread *tt = NULL;
 	sema->value++;
 
-	if (!list_empty (&sema->waiters)){
-		/*Project-1 starts*/
-		//Considers the case of changing priority in waiting list
-		list_sort(&sema->waiters, priority_cmp_td, NULL);
-		tt = list_entry (list_pop_front (&sema->waiters),struct thread, elem);
-		thread_unblock (tt);
+	if (!list_empty(&sema->waiters)) {
+		// Project1 starts
+		// Considers the case of changing priority in waiting list
+		list_sort(&sema->waiters, thread_priority_don, NULL);
+		tt = list_entry(list_pop_front(&sema->waiters), struct thread, elem);
+		thread_unblock(tt);
 	}
 
-	if (tt != NULL && !(intr_context()))
-		preemptive_check(thread_get_priority);
-
-	/* end */
-	intr_set_level (old_level);
+	if (tt && !intr_context()) {
+		thread_check(thread_get_priority);
+	}
+	
+	intr_set_level(old_level);
 }
 
 static void sema_test_helper (void *sema_);
@@ -201,30 +201,37 @@ lock_acquire (struct lock *lock) {
 	ASSERT (!intr_context ());
 	ASSERT (!lock_held_by_current_thread (lock));
 
-	/* Project-1 starts */
+	//Project1
 	struct thread *curr = thread_current();
-	int tt_priority = thread_get_priority();
+	int priority_l= thread_get_priority();
+	struct lock *l = lock;
 
-	if (lock->holder != NULL){
-		struct lock *l = lock;
-
+	if (lock->holder) {
 		// Implements nested priority donation
-		while (l != NULL && l->holder !=NULL && l->holder->priority < tt_priority){
-			inherit_priority(l->holder, tt_priority);
-			if (l->priority_maximum < tt_priority) l->priority_maximum = tt_priority;
-			l = l->holder->lock_wait;
-		}
+		while (l && l->holder && l->holder->priority < priority_l) {
+			//struct thread *current_thread = thread_current();
+			//void get_priority(struct thread *target_thread, int target_thread_priority) {
+			l->holder->priority = priority_l;
 
-	}else{
-		lock->priority_maximum = tt_priority;
+			if (curr == priority_l) {
+				thread_check(priority_l);
+  			}
+
+			//get_priority(l->holder, priority_l);
+			l->max_p = l->max_p < priority_l ? priority_l : l->max_p;
+			l = l->holder->lock_waiting;
+		}
+	} else {
+		lock->max_p = priority_l;
 	}
-	
-	curr -> lock_wait = lock;
-	sema_down (&lock->semaphore);
+
+	curr->lock_waiting = lock;
+	sema_down(&lock->semaphore);
 	lock->holder = curr;
-	curr->lock_wait = NULL;
-	list_insert_ordered(&lock->holder->locks_pd, &lock->elem, priority_cmp_lk, NULL);
-	/* end */
+	curr->lock_waiting = NULL;
+	list_insert_ordered(&lock->holder->priority_donation_lock, &lock->elem, lock_priority_don, NULL);
+	
+
 }
 
 /* Tries to acquires LOCK and returns true if successful or false
@@ -257,20 +264,38 @@ lock_release (struct lock *lock) {
 	ASSERT (lock != NULL);
 	ASSERT (lock_held_by_current_thread (lock));
 
-	/* Project-1 starts */
-	struct thread *curr = thread_current();
+	// Project1
+	struct thread *current_thread = thread_current();
+
+	// Set the lock's holder to NULL and release the semaphore
 	lock->holder = NULL;
-	sema_up (&lock->semaphore);
+	sema_up(&lock->semaphore);
+
+	// Remove the lock from the current thread's list of held locks
 	list_remove(&lock->elem);
 
-	/* Handles multiple donation case and get new priority for current thread*/
-	if (!list_empty(&curr->locks_pd)){
-		list_sort(&curr->locks_pd, priority_cmp_lk, NULL);
-		inherit_priority(curr, list_entry(list_begin(&curr->locks_pd), struct lock, elem) ->priority_maximum);
-	}else{
-		inherit_priority(curr, curr->priority_prev);
+	// Handle multiple donation cases and update the current thread's priority
+	if (!list_empty(&current_thread->priority_donation_lock)) {
+		// Sort the list of held locks in descending order of priority
+		list_sort(&current_thread->priority_donation_lock, lock_priority_don, NULL);
+
+		// Inherit the priority of the highest-priority lock
+		struct lock *highest_priority_lock = list_entry(list_begin(&current_thread->priority_donation_lock), struct lock, elem);
+		
+		current_thread->priority = highest_priority_lock->max_p;
+		thread_check(highest_priority_lock->max_p);
+		
+
+
+
+
+
+	} else {
+		// If no locks are held, restore the thread's original priority
+		current_thread->priority = current_thread->previous_priority;
+		thread_check(current_thread->previous_priority);
+		
 	}
-	/* end */
 }
 
 /* Returns true if the current thread holds LOCK, false
@@ -328,11 +353,16 @@ cond_wait (struct condition *cond, struct lock *lock) {
 	ASSERT (!intr_context ());
 	ASSERT (lock_held_by_current_thread (lock));
 
-	sema_init (&waiter.semaphore, 0);
-	/* Project-1 starts */
-	waiter.semaphore.priority = thread_get_priority();
-	list_insert_ordered(&cond->waiters, &waiter.elem, priority_cmp_sp, NULL);
-	/* end */
+	sema_init(&waiter.semaphore, 0);
+
+	// Project1 starts
+	// Get the current thread's priority and set it as the semaphore's priority
+	int current_thread_priority = thread_get_priority();
+	waiter.semaphore.priority = current_thread_priority;
+
+	// Insert the waiter into the conditional variable's waiters list in priority order
+	list_insert_ordered(&cond->waiters, &waiter.elem, sp_priority_donate, NULL);
+	
 
 	lock_release (lock);
 	sema_down (&waiter.semaphore);
@@ -353,12 +383,17 @@ cond_signal (struct condition *cond, struct lock *lock UNUSED) {
 	ASSERT (!intr_context ());
 	ASSERT (lock_held_by_current_thread (lock));
 
-	if (!list_empty (&cond->waiters))
-		/* Project-1 starts */
-		list_sort(&cond->waiters, priority_cmp_td, NULL);
-		sema_up (&list_entry (list_pop_front (&cond->waiters),
-					struct semaphore_elem, elem)->semaphore);
-		/* end */
+	if (!list_empty(&cond->waiters)) {
+  	// Project1
+		list_sort(&cond->waiters, thread_priority_don, NULL);
+
+		struct list_elem *highest_priority_waiter_elem = list_pop_front(&cond->waiters);
+		struct semaphore_elem *highest_priority_waiter_sema_elem = list_entry(highest_priority_waiter_elem, struct semaphore_elem, elem);
+		struct semaphore *highest_priority_waiter_semaphore = &highest_priority_waiter_sema_elem->semaphore;
+
+		sema_up(highest_priority_waiter_semaphore);
+		
+	}
 }
 
 /* Wakes up all threads, if any, waiting on COND (protected by
@@ -377,16 +412,18 @@ cond_broadcast (struct condition *cond, struct lock *lock) {
 }
 
 
-/* Project-1 starts */
-void inherit_priority(struct thread *tt, int tt_priority){
-	struct thread *curr = thread_current();
-	tt-> priority = tt_priority;
-	if (curr == tt){
-		preemptive_check(tt_priority);
-	}
+//Project1 starts */
+
+
+bool sp_priority_donate(const struct list_elem *first, const struct list_elem *second) {
+  struct semaphore_elem *first_semaphore_elem = list_entry(first, struct semaphore_elem, elem);
+  struct semaphore_elem *second_semaphore_elem = list_entry(second, struct semaphore_elem, elem);
+
+  int first_semaphore_priority = first_semaphore_elem->semaphore.priority;
+  int second_semaphore_priority = second_semaphore_elem->semaphore.priority;
+
+  bool is_first_semaphore_priority_greater = (first_semaphore_priority > second_semaphore_priority);
+
+  return is_first_semaphore_priority_greater;
 }
 
-bool priority_cmp_sp(const struct list_elem *first, const struct list_elem *second, void *aux){
-	return list_entry(first, struct semaphore_elem, elem)->semaphore.priority > list_entry(second, struct semaphore_elem, elem)->semaphore.priority;
-}
-/* end */

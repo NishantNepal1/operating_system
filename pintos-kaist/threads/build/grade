@@ -74,12 +74,12 @@ Functionality of advanced scheduler (tests/threads/mlfqs/Rubric):
 DETAILS OF tests/threads/mlfqs/mlfqs-load-1 FAILURE:
 
 Kernel panic in run: PANIC at ../../tests/threads/tests.c:94 in fail(): test failed
-Call stack: 0x80042138b0 0x8004216eb2 0x8004219f58 0x8004216cec 0x8004206636 0x8004206783 0x8004206120
+Call stack: 0x800421380d 0x8004216e0f 0x8004219eb5 0x8004216c49 0x8004206636 0x8004206783 0x8004206120
 Translation of call stack:
-0x00000080042138b0: debug_panic (lib/kernel/debug.c:32)
-0x0000008004216eb2: pass (tests/threads/tests.c:100)
-0x0000008004219f58: test_mlfqs_load_1 (tests/threads/mlfqs/mlfqs-load-1.c:31)
-0x0000008004216cec: run_test (tests/threads/tests.c:58)
+0x000000800421380d: debug_panic (lib/kernel/debug.c:32)
+0x0000008004216e0f: pass (tests/threads/tests.c:100)
+0x0000008004219eb5: test_mlfqs_load_1 (tests/threads/mlfqs/mlfqs-load-1.c:31)
+0x0000008004216c49: run_test (tests/threads/tests.c:58)
 0x0000008004206636: run_task (threads/init.c:252)
 0x0000008004206783: run_actions (threads/init.c:297)
 0x0000008004206120: main (threads/init.c:125)
@@ -99,7 +99,7 @@ Executing 'mlfqs-load-1':
 (mlfqs-load-1) spinning for up to 45 seconds, please wait...
 (mlfqs-load-1) FAIL: load average stayed below 0.5 for more than 45 seconds
 Kernel PANIC at ../../tests/threads/tests.c:94 in fail(): test failed
-Call stack: 0x80042138b0 0x8004216eb2 0x8004219f58 0x8004216cec 0x8004206636 0x8004206783 0x8004206120.
+Call stack: 0x800421380d 0x8004216e0f 0x8004219eb5 0x8004216c49 0x8004206636 0x8004206783 0x8004206120.
 The `backtrace' program can make call stacks useful.
 Read "Backtraces" in the "Debugging Tools" chapter
 of the Pintos documentation for more information.
@@ -309,8 +309,8 @@ Executing 'mlfqs-load-60':
 (mlfqs-load-60) After 178 seconds, load average=0.00.
 (mlfqs-load-60) end
 Execution of 'mlfqs-load-60' complete.
-Timer: 18842 ticks
-Thread: 0 idle ticks, 18842 kernel ticks, 0 user ticks
+Timer: 18841 ticks
+Thread: 0 idle ticks, 18841 kernel ticks, 0 user ticks
 Console: 5339 characters output
 Keyboard: 0 keys pressed
 Powering off...
@@ -629,7 +629,7 @@ Kernel command line: -q -mlfqs run mlfqs-recent-1
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  104,755,200 loops/s.
+Calibrating timer...  157,081,600 loops/s.
 Boot complete.
 Executing 'mlfqs-recent-1':
 (mlfqs-recent-1) begin
@@ -761,8 +761,8 @@ Executing 'mlfqs-nice-2':
 (mlfqs-nice-2) Thread 1 received 1501 ticks.
 (mlfqs-nice-2) end
 Execution of 'mlfqs-nice-2' complete.
-Timer: 4041 ticks
-Thread: 0 idle ticks, 4041 kernel ticks, 0 user ticks
+Timer: 4042 ticks
+Thread: 0 idle ticks, 4042 kernel ticks, 0 user ticks
 Console: 671 characters output
 Keyboard: 0 keys pressed
 Powering off...
@@ -775,13 +775,13 @@ Some tick counts were missing or differed from those expected by more than 25.
 thread   actual <-> expected explanation
 ------ -------- --- -------- ----------------------------------------
      0      301 <<< 672      Too small, by 346.
-     1      301 <<< 588      Too small, by 262.
+     1      300 <<< 588      Too small, by 263.
      2      301 <<< 492      Too small, by 166.
      3      300 <<< 408      Too small, by 83.
-     4      301  =  316      
-     5      300 >>> 232      Too big, by 43.
-     6      301 >>> 152      Too big, by 124.
-     7      300 >>> 92       Too big, by 183.
+     4      300  =  316      
+     5      301 >>> 232      Too big, by 44.
+     6      300 >>> 152      Too big, by 123.
+     7      301 >>> 92       Too big, by 184.
      8      301 >>> 40       Too big, by 236.
      9      301 >>> 8        Too big, by 268.
 
@@ -801,19 +801,19 @@ Executing 'mlfqs-nice-10':
 (mlfqs-nice-10) Starting threads took 1 ticks.
 (mlfqs-nice-10) Sleeping 40 seconds to let threads run, please wait...
 (mlfqs-nice-10) Thread 0 received 301 ticks.
-(mlfqs-nice-10) Thread 1 received 301 ticks.
+(mlfqs-nice-10) Thread 1 received 300 ticks.
 (mlfqs-nice-10) Thread 2 received 301 ticks.
 (mlfqs-nice-10) Thread 3 received 300 ticks.
-(mlfqs-nice-10) Thread 4 received 301 ticks.
-(mlfqs-nice-10) Thread 5 received 300 ticks.
-(mlfqs-nice-10) Thread 6 received 301 ticks.
-(mlfqs-nice-10) Thread 7 received 300 ticks.
+(mlfqs-nice-10) Thread 4 received 300 ticks.
+(mlfqs-nice-10) Thread 5 received 301 ticks.
+(mlfqs-nice-10) Thread 6 received 300 ticks.
+(mlfqs-nice-10) Thread 7 received 301 ticks.
 (mlfqs-nice-10) Thread 8 received 301 ticks.
 (mlfqs-nice-10) Thread 9 received 301 ticks.
 (mlfqs-nice-10) end
 Execution of 'mlfqs-nice-10' complete.
-Timer: 4044 ticks
-Thread: 0 idle ticks, 4044 kernel ticks, 0 user ticks
+Timer: 4045 ticks
+Thread: 0 idle ticks, 4045 kernel ticks, 0 user ticks
 Console: 1040 characters output
 Keyboard: 0 keys pressed
 Powering off...
@@ -868,8 +868,8 @@ Executing 'mlfqs-block':
 (mlfqs-block) Block thread should have already acquired lock.
 (mlfqs-block) end
 Execution of 'mlfqs-block' complete.
-Timer: 3041 ticks
-Thread: 0 idle ticks, 3041 kernel ticks, 0 user ticks
+Timer: 3042 ticks
+Thread: 0 idle ticks, 3042 kernel ticks, 0 user ticks
 Console: 792 characters output
 Keyboard: 0 keys pressed
 Powering off...

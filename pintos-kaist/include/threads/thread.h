@@ -114,15 +114,14 @@ struct thread {
 	struct intr_frame tf;               /* Information for switching */
 	unsigned magic;                     /* Detects stack overflow. */
 
-	/* Project-1 starts */
+	//project1
 	int nice;
-	int recent_cpu;
+	int recent;
 	// int load_avg;
-	int64_t wake_up_tick;
-	int priority_prev; /* Previous priority used in priority donation*/
-	struct list locks_pd; /*List of locks for priority donation*/
-	struct lock *lock_wait; /*Lock that the thread is waiting for*/
-	/* end */
+	int previous_priority; /* Previous priority used in priority donation*/
+	struct list priority_donation_lock; /*List of locks for priority donation*/
+	struct lock *lock_waiting; /*Lock that the thread is waiting for*/
+	
 
 
 };
@@ -163,13 +162,9 @@ void do_iret (struct intr_frame *tf);
 
 #endif
 
-/* Project-1 starts */
-bool priority_cmp_td(const struct list_elem *first, const struct list_elem *second, void *aux UNUSED);
-bool priority_cmp_lk(const struct list_elem *first, const struct list_elem *second, void *aux UNUSED);
-static bool wake_up_tick_cmp(const struct list_elem *first, const struct list_elem *second, void *aux UNUSED);
-void hide_thread(int64_t ticks);
-void wake_up_thread(int64_t tick);
-void preemptive_check(int tt_priority);
+//project1
+//basic initialization of functions
+bool thread_priority_don(const struct list_elem *first, const struct list_elem *second);
+bool lock_priority_don(const struct list_elem *first, const struct list_elem *second);
+void thread_check(int thread_priority);
 
-
-/* Project-1 ends */
